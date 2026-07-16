@@ -1,0 +1,879 @@
+---
+title: "Untitled"
+format: html
+---
+
+```{r}
+# Loading packages
+
+library(readxl)
+library(writexl)
+library(haven)
+library(expss)
+library(tidyverse)
+library(janitor)
+library(vdemdata)
+library(wbstats)
+library(describedata)
+library(gt)
+library(modelsummary)
+library(kableExtra)
+library(survival)
+library(survminer)
+library(plm)
+library(gtsummary)
+library(fixest)
+library(margins)
+library(did)
+library(countrycode)
+
+rm(list = ls())
+
+```
+
+```{r}
+#| label: 2013-2023
+
+# Creating the dataset
+
+rm(list = ls())
+
+# Starting with EDGAR emissions data
+
+edgar_ghg_2013_2023 <- read_excel(
+  "EDGAR_AR5_GHG_1970_2024.xlsx",
+  sheet = "TOTALS BY COUNTRY",
+  skip = 9
+)
+
+edgar_ghg_2013_2023 <- edgar_ghg_2013_2023 |>
+  clean_names()
+
+# Renaming vars for merging with WB data later
+
+edgar_ghg_2013_2023 <- edgar_ghg_2013_2023 |>
+  rename(country = name, iso3c = country_code_a3)
+
+# Restricting the data for time period
+
+edgar_ghg_2013_2023 <- edgar_ghg_2013_2023 |>
+  select(country, iso3c, y_2013:y_2023)
+
+# Reshaping from wide to long
+
+edgar_ghg_2013_2023 <- edgar_ghg_2013_2023 |>
+  pivot_longer(
+    cols = starts_with("y"),
+    names_to = "year",
+    values_to = "ed_ghg_emissions"
+  )
+
+# Transforming year
+
+edgar_ghg_2013_2023 <- edgar_ghg_2013_2023 |>
+  mutate(
+    year = as.integer(str_remove(year, "y_"))
+  )
+
+# Dropping aviation and shipping, which are not countries
+
+edgar_ghg_2013_2023 <- edgar_ghg_2013_2023 |>
+  filter(iso3c != "AIR" & iso3c != "SEA")
+
+edgar_clean_data <- edgar_ghg_2013_2023
+
+# Saving the EDGAR cleaned data
+
+write_xlsx(edgar_clean_data, "edgar_clean_data.xlsx")
+
+saveRDS(edgar_clean_data, "edgar_clean_data.rds")
+
+# Cleaning the environment to work with VDEM data
+
+rm(list = ls())
+
+# Importing V-Dem data
+
+vdemdata::vdem -> vdem
+vdemdata::codebook -> vdem_codebook
+
+# Keeping only years between 2013 and 2023 and the following vars.:
+# v2x_corr (Political Corruption Index)
+# v2x_polyarchy (Electoral Democracy Index)
+# v2x_libdem (Liberal Democracy Index)
+# v2x_partipdem (Participatory Democracy Index)
+# v2x_delibdem (Deliberative Democracy Index)
+# v2x_egaldem (Egalitarian Democracy Index)
+# v2x_rule (Rule of Law)
+# year (Year)
+# country_name (Country)
+# country_text_id (Country ISO3C code)
+
+vdem_clean_data <- vdem |>
+  filter(year >= 2013 & year <= 2023) |>
+  select(
+    country_name,
+    country_text_id,
+    year,
+    v2x_corr,
+    v2clrspct,
+    v2x_polyarchy,
+    v2x_libdem,
+    v2x_partipdem,
+    v2x_delibdem,
+    v2x_egaldem,
+    v2x_rule
+  )
+
+# Renaming the vars. for merging and easy identification.
+# State capacity is based on https://link.springer.com/article/10.1007/s11135-022-01466-x
+vdem_clean_data <- vdem_clean_data |>
+  rename(
+    country = country_name,
+    iso3c = country_text_id,
+    vdem_corruption = v2x_corr,
+    vdem_statecapacity = v2clrspct,
+    vdem_electdem = v2x_polyarchy,
+    vdem_libdem = v2x_libdem,
+    vdem_partipdem = v2x_partipdem,
+    vdem_delibdem = v2x_delibdem,
+    vdem_egaldem = v2x_egaldem,
+    vdem_rulelaw = v2x_rule
+  )
+
+# Ensuring year reads as integer
+
+vdem_clean_data <- vdem_clean_data |>
+  mutate(year = as.integer(year))
+
+write_xlsx(vdem_clean_data, "vdem_clean_data.xlsx")
+
+saveRDS(vdem_clean_data, "vdem_clean_data.rds")
+
+# Cleaning the environment to work with NGFS data
+
+rm(list = ls())
+
+# Importing the data shared by NGFS
+
+ngfs_clean_data <- read_excel("ngfs_members_date.xlsx")
+
+# Dropping observers and keeping only countries
+
+ngfs_clean_data <- ngfs_clean_data |>
+  filter(member_status != "Observer")
+
+# Keeping only observations until 2023
+ngfs_clean_data <- ngfs_clean_data |>
+  filter(year <= 2023)
+
+# Drop rows for "Abu Dhabi", "Dubai", which work as UAE and "European Union"
+ngfs_clean_data <- ngfs_clean_data |>
+  filter(!country %in% c("Abu Dhabi", "Dubai", "European Union"))
+
+# Arranging the rows alphabetically based on the country variable
+ngfs_clean_data <- ngfs_clean_data |>
+  arrange(country)
+
+# Keeping only the earliest membership year for each country
+
+ngfs_clean_data <- ngfs_clean_data |>
+  group_by(country) |>
+  filter(year == min(year)) |>
+  ungroup() |>
+  distinct(country, .keep_all = TRUE)
+
+# Creating a an iso3c variable for merging with other datasets
+
+ngfs_clean_data <- ngfs_clean_data |>
+  mutate(
+    year = as.integer(year),
+    iso3c = countrycode(
+      sourcevar = country,
+      origin = "country.name",
+      destination = "iso3c"
+    )
+  )
+
+# Saving the NGFS clean data
+
+write_xlsx(ngfs_clean_data, "ngfs_clean_data.xlsx")
+
+saveRDS(ngfs_clean_data, "ngfs_clean_data.rds")
+
+# Cleaning the environment to work with World Bank data
+
+rm(list = ls())
+
+# # Importing World Bank data for merging
+
+# # Increasing the default timeout limit
+
+# options(timeout = 120)
+
+# # Setting httr to wait longer
+# httr::set_config(httr::timeout(120))
+
+# my_indicators <- c(
+#   "gdp_pc" = "NY.GDP.PCAP.KD",
+#   "gdp_pc_growth" = "NY.GDP.PCAP.KD.ZG",
+#   "pop_total" = "SP.POP.TOTL",
+#   "pop_growth" = "SP.POP.GROW",
+#   "pop_density" = "EN.POP.DNST",
+#   "tot_nat_resources" = "NY.GDP.TOTL.RT.ZS",
+#   "forest_area" = "AG.LND.FRST.ZS",
+#   "agric_area" = "AG.LND.AGRI.ZS",
+#   "trade" = "NE.TRD.GNFS.ZS"
+# )
+
+# wb_data <- wb_data(my_indicators, start_date = 2013, end_date = 2023)
+
+# Saving to avoid downloading every time
+
+# write_xlsx(wb_data, "wb_data.xlsx")
+
+# saveRDS(wb_data, "wb_data.rds")
+
+# Loading wb_data
+
+wb_data <- readRDS("wb_data.rds")
+
+# Renaming the year variable
+
+wb_data <- wb_data |>
+  rename(year = date) |>
+  mutate(year = as.integer(year))
+
+# Generating ngfs_member = 0
+
+wb_data <- wb_data |>
+  mutate(ngfs_member = 0)
+
+# Loading the other dataframes for merging with WB
+
+edgar_clean_data <- readRDS("edgar_clean_data.rds")
+ngfs_clean_data <- readRDS("ngfs_clean_data.rds")
+vdem_clean_data <- readRDS("vdem_clean_data.rds")
+
+# Merge wb_data with ngfs_clean_data using the iso3c variable and renaming the year column
+wb_data <- wb_data |>
+  left_join(
+    ngfs_clean_data |>
+      select(iso3c, ngfs_memb_year = year),
+    by = "iso3c"
+  )
+
+# Checking the merging operation. Only Guernsey and Jersey out.
+
+failed_matches <- ngfs_clean_data |>
+  select(iso3c, country) |>
+  anti_join(wb_data, by = "iso3c") |>
+  distinct()
+
+print(failed_matches)
+
+# Updating ngfs_member to 1 for the countries from the year they became members onward
+
+wb_data <- wb_data |>
+  group_by(iso3c) |>
+  mutate(
+    ngfs_member = ifelse(
+      year >= ngfs_memb_year,
+      1,
+      ngfs_member
+    )
+  ) |>
+  ungroup()
+
+# Not changing membership data for the United Arab Emirates even considering Dubai and Abu Dhabi membership in 2019
+
+# wb_data <- wb_data |>
+#   mutate(
+#     ngfs_member = if_else(
+#       iso3c == "ARE" & year >= 2019,
+#       1,
+#       ngfs_member
+#     )
+#   )
+
+# Replacing missing values to 0 for countries that never joined the NGFS
+
+wb_data <- wb_data |>
+  mutate(
+    ngfs_member = ifelse(
+      is.na(ngfs_member),
+      0,
+      ngfs_member
+    )
+  )
+
+# Creating a dummy only for members regardless of year
+
+ngfs_iso3c <- unique(ngfs_clean_data$iso3c)
+
+wb_data <- wb_data |>
+  mutate(
+    dngfs_member = ifelse(
+      iso3c %in% ngfs_iso3c,
+      1,
+      0
+    )
+  )
+
+# Saving the World Bank cleaned data
+
+wb_clean_data <- wb_data
+
+write_xlsx(wb_clean_data, "wb_clean_data.xlsx")
+
+saveRDS(wb_clean_data, "wb_clean_data.rds")
+
+# Incorporating the income level and region vars by first getting all countries
+
+countries_info <- wb_countries()
+
+# Dropping aggregated regions
+
+countries_info <- countries_info |>
+  filter(region != "Aggregates")
+
+# Cleaning to only keep the vars for merging
+
+countries_income <- countries_info[, c(
+  "iso3c",
+  "income_level",
+  "income_level_iso3c",
+  "region",
+  "region_iso3c"
+)]
+
+# Merge income level information with my dataset
+
+wb_clean_data <- wb_clean_data |>
+  left_join(countries_income, by = "iso3c")
+
+# Getting the list of unique NGFS members before merging with other datasets
+# NGFS members = 92
+
+ngfs_member_countries <- wb_clean_data |>
+  filter(ngfs_member == 1) |>
+  distinct(country) |>
+  arrange(country)
+
+print(ngfs_member_countries, n = 100)
+
+# Merging the datasets with countries that appear across all years and data
+
+gcb_full_data <- wb_clean_data |>
+  inner_join(edgar_clean_data, by = c("iso3c", "year")) |>
+  inner_join(vdem_clean_data, by = c("iso3c", "year")) |>
+  select(-country.y, -country) |> # Drops EDGAR (.y) and V-Dem (country) names
+  rename(country = country.x) |> # Keeps World Bank (.x) and renames it back to master country
+  arrange(country, year)
+
+# Checking which countries appear only in one or another dataset
+
+before_merging <- wb_clean_data |>
+  filter(ngfs_member == 1) |>
+  pull(country) |>
+  unique()
+
+after_merging <- gcb_full_data |>
+  filter(ngfs_member == 1) |>
+  pull(country) |>
+  unique()
+
+# Checking the difference between the two lists
+
+dropped_countries <- setdiff(before_merging, after_merging)
+
+print(dropped_countries) # "Cayman Islands" "Isle of Man" "Liechtenstein" "Monaco" "Montenegro" "Serbia" are dropped
+
+# Reordering the vars
+gcb_full_data <- gcb_full_data |>
+  select(
+    country,
+    year,
+    ngfs_member,
+    dngfs_member,
+    ngfs_memb_year,
+    region,
+    income_level,
+    everything()
+  )
+
+# Working with factors and removing redundant variables
+
+gcb_full_data <- gcb_full_data |>
+  mutate(
+    ngfs_member = as.factor(ngfs_member),
+    dngfs_member = as.factor(dngfs_member)
+  ) |>
+  select(-ngfs_memb_year, -iso2c)
+
+# Saving the merged, manipulated data
+
+write_xlsx(gcb_full_data, "gcb_full_data.xlsx")
+
+saveRDS(gcb_full_data, "gcb_full_data.rds")
+
+# Cleaning the environment to clean gcb_full_data
+
+rm(list = ls())
+
+gcb_full_data <- readRDS("gcb_full_data.rds")
+
+# Cleaning vars using listwise deletion for a preliminary analysis
+missvarlist <- c(
+  "agric_area",
+  "forest_area",
+  "trade",
+  "gdp_pc",
+  "gdp_pc_growth",
+  #  "tot_nat_resources", # has 24% of missing data
+  "pop_growth",
+  "pop_total",
+  # "pop_density",
+  "vdem_corruption",
+  "vdem_statecapacity",
+  "vdem_electdem",
+  "vdem_libdem",
+  "vdem_partipdem",
+  "vdem_delibdem",
+  "vdem_egaldem",
+  "vdem_rulelaw"
+)
+
+gcb_data <- gcb_full_data[
+  complete.cases(
+    gcb_full_data[, missvarlist]
+  ),
+]
+
+# Keeping if country-year spans 2013-2023
+# Dropping countries that appear, e.g., only one year in the data
+
+gcb_data <- gcb_data |>
+  group_by(country) |>
+  filter(length(unique(year)) == 11) |>
+  ungroup()
+
+# After listwise deletion, NGFS members = 80 as opposed to 69 non-members.
+
+ngfs_membership_status <- gcb_data |>
+  group_by(dngfs_member) |>
+  summarise(num_countries = n_distinct(country))
+
+# Confirming no missing data
+
+missing_datacheck <- gcb_data |>
+  summarise(across(everything(), ~ sum(is.na(.))))
+
+# Confirming that the dataset is balanced
+
+country_years_check <- gcb_data |>
+  group_by(country) |>
+  summarise(num_years = n_distinct(year)) |>
+  arrange(num_years)
+
+saveRDS(gcb_data, "gcb_data_2013.rds")
+
+```
+
+```{r}
+#| label: 2015-2023
+
+# Creating the dataset
+
+rm(list = ls())
+
+# Starting with EDGAR emissions data
+
+edgar_ghg_2015_2023 <- read_excel(
+  "EDGAR_AR5_GHG_1970_2024.xlsx",
+  sheet = "TOTALS BY COUNTRY",
+  skip = 9
+)
+
+edgar_ghg_2015_2023 <- edgar_ghg_2015_2023 |>
+  clean_names()
+
+# Renaming vars for merging with WB data later
+
+edgar_ghg_2015_2023 <- edgar_ghg_2015_2023 |>
+  rename(country = name, iso3c = country_code_a3)
+
+# Restricting the data for time period (CHANGED TO 2015)
+edgar_ghg_2015_2023 <- edgar_ghg_2015_2023 |>
+  select(country, iso3c, y_2015:y_2023)
+
+# Reshaping from wide to long
+
+edgar_ghg_2015_2023 <- edgar_ghg_2015_2023 |>
+  pivot_longer(
+    cols = starts_with("y"),
+    names_to = "year",
+    values_to = "ed_ghg_emissions"
+  )
+
+# Transforming year
+
+edgar_ghg_2015_2023 <- edgar_ghg_2015_2023 |>
+  mutate(
+    year = as.integer(str_remove(year, "y_"))
+  )
+
+# Dropping aviation and shipping, which are not countries
+
+edgar_ghg_2015_2023 <- edgar_ghg_2015_2023 |>
+  filter(iso3c != "AIR" & iso3c != "SEA")
+
+edgar_clean_data <- edgar_ghg_2015_2023
+
+# Saving the EDGAR cleaned data
+
+write_xlsx(edgar_clean_data, "edgar_clean_data.xlsx")
+
+saveRDS(edgar_clean_data, "edgar_clean_data.rds")
+
+# Cleaning the environment to work with VDEM data
+
+rm(list = ls())
+
+# Importing V-Dem data
+
+vdemdata::vdem -> vdem
+vdemdata::codebook -> vdem_codebook
+
+# Keeping only years between 2015 and 2023 (CHANGED TO 2015)
+vdem_clean_data <- vdem |>
+  filter(year >= 2015 & year <= 2023) |>
+  select(
+    country_name,
+    country_text_id,
+    year,
+    v2x_corr,
+    v2clrspct,
+    v2x_polyarchy,
+    v2x_libdem,
+    v2x_partipdem,
+    v2x_delibdem,
+    v2x_egaldem,
+    v2x_rule
+  )
+
+# Renaming the vars. for merging and easy identification.
+vdem_clean_data <- vdem_clean_data |>
+  rename(
+    country = country_name,
+    iso3c = country_text_id,
+    vdem_corruption = v2x_corr,
+    vdem_statecapacity = v2clrspct,
+    vdem_electdem = v2x_polyarchy,
+    vdem_libdem = v2x_libdem,
+    vdem_partipdem = v2x_partipdem,
+    vdem_delibdem = v2x_delibdem,
+    vdem_egaldem = v2x_egaldem,
+    vdem_rulelaw = v2x_rule
+  )
+
+# Ensuring year reads as integer
+
+vdem_clean_data <- vdem_clean_data |>
+  mutate(year = as.integer(year))
+
+write_xlsx(vdem_clean_data, "vdem_clean_data.xlsx")
+
+saveRDS(vdem_clean_data, "vdem_clean_data.rds")
+
+# Cleaning the environment to work with NGFS data
+
+rm(list = ls())
+
+# Importing the data shared by NGFS
+
+ngfs_clean_data <- read_excel("ngfs_members_date.xlsx")
+
+# Dropping observers and keeping only countries
+
+ngfs_clean_data <- ngfs_clean_data |>
+  filter(member_status != "Observer")
+
+# Keeping only observations until 2023
+ngfs_clean_data <- ngfs_clean_data |>
+  filter(year <= 2023)
+
+# Drop rows for "Abu Dhabi", "Dubai", which work as UAE and "European Union"
+ngfs_clean_data <- ngfs_clean_data |>
+  filter(!country %in% c("Abu Dhabi", "Dubai", "European Union"))
+
+# Arranging the rows alphabetically based on the country variable
+ngfs_clean_data <- ngfs_clean_data |>
+  arrange(country)
+
+# Keeping only the earliest membership year for each country
+
+ngfs_clean_data <- ngfs_clean_data |>
+  group_by(country) |>
+  filter(year == min(year)) |>
+  ungroup() |>
+  distinct(country, .keep_all = TRUE)
+
+# Creating a an iso3c variable for merging with other datasets
+
+ngfs_clean_data <- ngfs_clean_data |>
+  mutate(
+    year = as.integer(year),
+    iso3c = countrycode(
+      sourcevar = country,
+      origin = "country.name",
+      destination = "iso3c"
+    )
+  )
+
+# Saving the NGFS clean data
+
+write_xlsx(ngfs_clean_data, "ngfs_clean_data.xlsx")
+
+saveRDS(ngfs_clean_data, "ngfs_clean_data.rds")
+
+# Cleaning the environment to work with World Bank data
+
+rm(list = ls())
+
+# Loading wb_data
+
+wb_data <- readRDS("wb_data.rds")
+
+# Renaming the year variable
+
+wb_data <- wb_data |>
+  rename(year = date) |>
+  mutate(year = as.integer(year))
+
+# Generating ngfs_member = 0
+
+wb_data <- wb_data |>
+  mutate(ngfs_member = 0)
+
+# Loading the other dataframes for merging with WB
+
+edgar_clean_data <- readRDS("edgar_clean_data.rds")
+ngfs_clean_data <- readRDS("ngfs_clean_data.rds")
+vdem_clean_data <- readRDS("vdem_clean_data.rds")
+
+# Merge wb_data with ngfs_clean_data using the iso3c variable 
+wb_data <- wb_data |>
+  left_join(
+    ngfs_clean_data |>
+      select(iso3c, ngfs_memb_year = year),
+    by = "iso3c"
+  )
+
+# Checking the merging operation. Only Guernsey and Jersey out.
+
+failed_matches <- ngfs_clean_data |>
+  select(iso3c, country) |>
+  anti_join(wb_data, by = "iso3c") |>
+  distinct()
+
+print(failed_matches)
+
+# Updating ngfs_member to 1 for the countries from the year they became members onward
+
+wb_data <- wb_data |>
+  group_by(iso3c) |>
+  mutate(
+    ngfs_member = ifelse(
+      year >= ngfs_memb_year,
+      1,
+      ngfs_member
+    )
+  ) |>
+  ungroup()
+
+# Replacing missing values to 0 for countries that never joined the NGFS
+
+wb_data <- wb_data |>
+  mutate(
+    ngfs_member = ifelse(
+      is.na(ngfs_member),
+      0,
+      ngfs_member
+    )
+  )
+
+# Creating a dummy only for members regardless of year
+
+ngfs_iso3c <- unique(ngfs_clean_data$iso3c)
+
+wb_data <- wb_data |>
+  mutate(
+    dngfs_member = ifelse(
+      iso3c %in% ngfs_iso3c,
+      1,
+      0
+    )
+  )
+
+# Saving the World Bank cleaned data
+
+wb_clean_data <- wb_data
+
+write_xlsx(wb_clean_data, "wb_clean_data.xlsx")
+
+saveRDS(wb_clean_data, "wb_clean_data.rds")
+
+# Incorporating the income level and region vars by first getting all countries
+
+countries_info <- wb_countries()
+
+# Dropping aggregated regions
+
+countries_info <- countries_info |>
+  filter(region != "Aggregates")
+
+# Cleaning to only keep the vars for merging
+
+countries_income <- countries_info[, c(
+  "iso3c",
+  "income_level",
+  "income_level_iso3c",
+  "region",
+  "region_iso3c"
+)]
+
+# Merge income level information with my dataset
+
+wb_clean_data <- wb_clean_data |>
+  left_join(countries_income, by = "iso3c")
+
+# Getting the list of unique NGFS members before merging with other datasets
+
+ngfs_member_countries <- wb_clean_data |>
+  filter(ngfs_member == 1) |>
+  distinct(country) |>
+  arrange(country)
+
+print(ngfs_member_countries, n = 100)
+
+# Merging the datasets with countries that appear across all years and data
+
+gcb_full_data <- wb_clean_data |>
+  inner_join(edgar_clean_data, by = c("iso3c", "year")) |>
+  inner_join(vdem_clean_data, by = c("iso3c", "year")) |>
+  select(-country.y, -country) |> 
+  rename(country = country.x) |> 
+  arrange(country, year)
+
+# Checking which countries appear only in one or another dataset
+
+before_merging <- wb_clean_data |>
+  filter(ngfs_member == 1) |>
+  pull(country) |>
+  unique()
+
+after_merging <- gcb_full_data |>
+  filter(ngfs_member == 1) |>
+  pull(country) |>
+  unique()
+
+# Checking the difference between the two lists
+
+dropped_countries <- setdiff(before_merging, after_merging)
+
+print(dropped_countries) 
+
+# Reordering the vars
+gcb_full_data <- gcb_full_data |>
+  select(
+    country,
+    year,
+    ngfs_member,
+    dngfs_member,
+    ngfs_memb_year,
+    region,
+    income_level,
+    everything()
+  )
+
+# Working with factors and removing redundant variables
+
+gcb_full_data <- gcb_full_data |>
+  mutate(
+    ngfs_member = as.factor(ngfs_member),
+    dngfs_member = as.factor(dngfs_member)
+  ) |>
+  select(-ngfs_memb_year, -iso2c)
+
+# Saving the merged, manipulated data
+
+write_xlsx(gcb_full_data, "gcb_full_data.xlsx")
+
+saveRDS(gcb_full_data, "gcb_full_data.rds")
+
+# Cleaning the environment to clean gcb_full_data
+
+rm(list = ls())
+
+gcb_full_data <- readRDS("gcb_full_data.rds")
+
+# Cleaning vars using listwise deletion for a preliminary analysis
+missvarlist <- c(
+  "agric_area",
+  "forest_area",
+  "trade",
+  "gdp_pc",
+  "gdp_pc_growth",
+  "pop_growth",
+  "pop_total",
+  "vdem_corruption",
+  "vdem_statecapacity",
+  "vdem_electdem",
+  "vdem_libdem",
+  "vdem_partipdem",
+  "vdem_delibdem",
+  "vdem_egaldem",
+  "vdem_rulelaw"
+)
+
+gcb_data <- gcb_full_data[
+  complete.cases(
+    gcb_full_data[, missvarlist]
+  ),
+]
+
+# Keeping if country-year spans 2015-2023 (CHANGED TO 9 YEARS)
+gcb_data <- gcb_data |>
+  group_by(country) |>
+  filter(length(unique(year)) == 9) |>
+  ungroup()
+
+# Saving this specific subset to disk for our comparison test
+saveRDS(gcb_data, "gcb_data_2015.rds")
+
+# After listwise deletion, checking membership status
+ngfs_membership_status <- gcb_data |>
+  group_by(dngfs_member) |>
+  summarise(num_countries = n_distinct(country))
+
+print(ngfs_membership_status)
+
+```
+
+```{r}
+
+# Load the final datasets from both windows
+data_2013 <- readRDS("gcb_data_2013.rds")
+data_2015 <- readRDS("gcb_data_2015.rds")
+
+# Extract unique country names
+countries_2013 <- unique(data_2013$country)
+countries_2015 <- unique(data_2015$country)
+
+# Find out which countries are in the 2015 list but missing from the 2013 list
+lost_countries <- setdiff(countries_2015, countries_2013)
+
+print(lost_countries)
+
+```

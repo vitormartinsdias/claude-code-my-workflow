@@ -1,0 +1,561 @@
+---
+title: "Green Central Banking"
+author: "Vitor M. Dias"
+format: 
+  pdf:
+    documentclass: article
+    fontsize: 12pt
+    papersize: letter
+    urlcolor: black
+    linkcolor: black
+    geometry: margin=1in
+    include-in-header: 
+      text: |
+        \usepackage{booktabs}
+        \usepackage{longtable}
+        \usepackage{array}
+        \usepackage{multirow}
+        \usepackage{wrapfig}
+        \usepackage{float}
+        \usepackage{colortbl}
+        \usepackage{pdflscape}
+        \usepackage{tabu}
+        \usepackage{threeparttablex}
+        \usepackage[normalem]{ulem}
+        \usepackage[utf8]{inputenc}
+        \usepackage{makecell}
+        \usepackage{xcolor}
+        \usepackage{tabularray}
+        \usepackage{float}
+        \usepackage{graphicx}
+        \usepackage{codehigh}
+execute: 
+  echo: false
+  message: false
+  warning: false
+---
+
+## Abstract
+
+In 2017, the Network of Central Banks and Supervisors for Greening the Financial System (NGFS) was established to promote sustainability in financial regulation. This article provides the first empirical investigation into whether NGFS member countries have reduced their greenhouse gas (GHG) emissions. Using panel data from 133 countries over 12 years, two-way fixed-effect models reveal that NGFS members, on average, emit significantly less GHG than non-members, controlling for ecological, economic, and political factors. These findings support the literature on the positive impact of international networks on policy outcomes. By proposing transition pathways and fostering policy alignment through financial frameworks that integrate climate risks, the NGFS has promoted financial and social-ecological sustainability deliberations among its members.. However, as the NGFS is predominantly composed of financial regulators from the Global North, the results also highlight the unequal financial capacities and policy implementation between the Global North and South. Therefore, this study discusses the potentials of such international networks in  the need for more inclusive global governance mechanisms.
+
+## Introduction
+
+## Data and Methods
+
+EDGAR emissions data come from here: https://edgar.jrc.ec.europa.eu/dataset_ghg80.
+
+World Bank data come from: https://databank.worldbank.org/source/world-development-indicators.
+
+V-Dem data come from: https://www.v-dem.net/data/the-v-dem-dataset/.
+
+```{r}
+#| label: Loading packages and data
+#| include: false
+
+rm(list = ls())
+
+library(readxl)
+library(writexl)
+library(tidyverse)
+library(janitor)
+library(magrittr)
+library(vdemdata)
+library(wbstats)
+library(describedata)
+library(modelsummary)
+library(kableExtra)
+library(survival)
+library(survminer)
+
+gcb_data <- readRDS("gcb_data.rds")
+
+```
+
+## Analysis
+
+```{r}
+#| label: Descriptive Statistics
+#| include: false
+
+descriptives <- gcb_data
+
+# Country (n=136) and year (n=21)
+
+descriptives %>%
+  group_by(year) %>%
+  summarise(n = n()) %>%
+  print(n = 25)
+
+# Renaming and labeling the data for descriptive statistics purposes
+descriptives <- descriptives %>%
+  mutate(ngfs_member = ifelse(ngfs_member == 1, "Member", "Non-Member")) %>%
+  select(ngfs_member,
+         "Greenhouse gas emissions" = "log_ed_ghg_emissions",
+         "Trade dependence" = "log_trade",
+         "GDP per capita" = "log_gdp_pc",
+         "GDP per capita growth" = "log_gdp_pc_growth_shifted",
+         "Natural resources" = "log_tot_nat_resources_shifted",
+#         "Population growth" = "log_pop_density",
+         "Population density" = "log_pop_density",
+         "Agricultural land" = "sqrt_agric_area",
+         "Forest land" = "sqrt_forest_area",
+         "Corruption index (0-1)" = "vdem_corruption",
+         "Deliberative democracy index (0-1)" = "vdem_delibdem",
+         # "Rule of law index" = "vdem_rulelaw", unreliable measure better captured by V-Dem's Rigorous and impartial public administration variable due to the autonomy of central banks, i.e., state capacity
+         "Administrative capacity index (0-1)" = "vdem_statecapacity_scaled",
+         "Region" = "cat_region")
+
+```
+
+\pagebreak
+
+```{r}
+#| label: Descriptive statistics
+#| include: true
+
+desc_table <- datasummary_balance(~ ngfs_member,
+          data = descriptives,
+          fmt = 2,
+#          title = "Descriptive Statistics of Country x Years by Network for Greening the Financial System Membership between 2001 and 2021 (N = 2,856)",
+#          notes = "Source: The data have been collected from the World Bank, the Network for Greening the Financial System, and the Varieties of Democracy (V-Dem) Project. Greenhouse gas emissions, trade dependence, GDP per capita, GDP per capita growth, natural resources, and population density have been log-transformed, while the square root transformation has been used for agricultural land and forest land.",
+          stars = T,
+          output = "data.frame") %>%
+            clean_names()
+
+desc_table <- desc_table %>%
+  filter(member_n_195_mean != "N")
+
+desc_table <- desc_table %>%
+  mutate(x = ifelse(x == "Region", "East and South Asia and Pacific", x))
+
+desc_table <- desc_table %>%
+  mutate(x = case_when(
+    row_number() == 13 ~ "Europe and Central Asia",
+    row_number() == 14 ~ "Latin America and Caribbean",
+    row_number() == 15 ~ "Middle East and Africa",
+    row_number() == 16 ~ "North America",
+    TRUE ~ x  # Keeps all other values unchanged
+  )) %>%
+  select(-x_2)
+
+kable(
+  desc_table,
+  booktabs = T,
+  align = c("lccccrc"),
+  linesep = "",
+  col.names = c("Variable", "Mean/N", "SD/%", "Mean/N", "SD/%", "Means Diff.", "SE"),
+  caption = "Descriptive Statistics of Country x Years by Network for Greening the Financial System Membership between 2001 and 2021 (N = 2,856)"
+  ) %>%
+kable_styling(
+  latex_options = c("hold_position")
+) %>%
+add_header_above(c(
+  " " = 1,
+  "Member" = 2,
+  "Non-Member" = 2,
+  " " = 2
+  )
+)
+```
+
+\pagebreak
+
+```{r}
+#| label: Descriptive Scatterplot
+#| include: true
+
+# Create a "before and after joining" indicator
+ngfs_start_year <- 2017
+
+gcb_data <- gcb_data %>%
+  mutate(period = ifelse(
+         year < ngfs_start_year, "Before NGFS", "After NGFS"
+    ))
+
+# Plot average emissions before and after
+ggplot(gcb_data, aes(x = period, y = log_ed_ghg_emissions, fill = as.factor(dngfs_member))) +
+  geom_boxplot() +
+  scale_fill_manual(values = c("black", "darkgrey"), labels = c("Non-Member", "NGFS Member")) +
+  labs(
+    title = "GHG Emissions Before and After NGFS Creation",
+    x = "Period",
+    y = "Log of GHG Emissions",
+    fill = "NGFS Membership"
+  ) +
+  theme_minimal()
+
+```
+
+\pagebreak
+
+Survival analysis predicting the probability of becoming an NGFS member
+
+```{r}
+#| label: Survival models
+#| include: true
+
+# Creating the survival data
+
+sgcb_data <- gcb_data %>%
+  mutate(time = year,
+         event = ngfs_member
+         )
+
+# Right-censoring the data to drop countries for the years after they joined the NGFS so that I do not overcount
+
+sgcb_data <- sgcb_data %>%
+  arrange(country, year) %>%
+  group_by(country) %>%
+  slice(if(1 %in% event) seq(match(1, event)) else row_number()) %>%
+  ungroup
+
+# Saving the survival data
+write_xlsx(sgcb_data, "sgcb_data.xlsx")
+
+kmsurvivalinc <- survfit(
+  Surv(sgcb_data$time, 
+  sgcb_data$event) ~ sgcb_data$dincome_level)
+
+center = theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
+ggsurvplot(kmsurvivalinc, 
+           data = sgcb_data,
+           break.time.by = 1,
+           xlim = c(2015,2021),
+           legend.title = "",
+           legend.labs = c("Middle and Low Income", "Upper and High Income"),
+           legend = "bottom",
+           ggtheme = center,
+           font.title = c(10, "bold"),
+           font.x = c(10),
+           font.y = c(10),
+           linetype = c("solid", "dashed"),
+           palette = c("black", "gray"),
+           fun = "event",
+           conf.int = TRUE,  # Show confidence intervals for the survival curves
+           pval = TRUE,      # Show p-value of the log-rank test
+           risk.table = FALSE,# Show risk table
+           xlab = "Year",   # Label for the x-axis
+           ylab = "NGFS Membership Probability",  # Label for the y-axis
+           title = "Probability of Joining the Network for Greening the Financial System by Country-Level Income")
+
+# Cox models
+
+coxm1 <- coxph(Surv(time, event) ~ log_ed_ghg_emissions + factor(cat_region),
+               data = sgcb_data)
+
+coxm2 <- coxph(Surv(time, event) ~ log_ed_ghg_emissions + 
+    factor(cat_region) + log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+    log_tot_nat_resources_shifted + log_pop_density + 
+    sqrt_agric_area + sqrt_forest_area,
+    data = sgcb_data)
+
+coxm3 <- coxph(Surv(time, event) ~ log_ed_ghg_emissions + 
+    factor(cat_region) + log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+    log_tot_nat_resources_shifted + log_pop_density + 
+    sqrt_agric_area + sqrt_forest_area + vdem_corruption + vdem_delibdem +
+    vdem_statecapacity_scaled,
+    data = sgcb_data)
+
+coxmodels <- list(
+    "Baseline" = coxm1,
+    "Ecological and Economic Indicators" = coxm2,
+    "Political Indicators" = coxm3)
+
+scoef_map <- c("log_ed_ghg_emissions" = "Greenhouse gas emissions",
+              "factor(cat_region)East + South Asia and Pacific" = "East + South Asia and Pacific",
+              "factor(cat_region)Latin America and Caribbean" = "Latin America and Caribbean",
+              "factor(cat_region)Middle East and Africa" = "Middle East and Africa",
+              "factor(cat_region)North America" = "North America",
+              "log_trade" = "Trade dependence",
+              "log_gdp_pc" = "GDP per capita",
+              "log_gdp_pc_growth_shifted" = "GDP per capita growth",
+              "log_tot_nat_resources_shifted" = "Natural resources",
+              "log_pop_density" = "Population density",
+              "sqrt_agric_area" = "Agricultural land",
+              "sqrt_forest_area" = "Forest land",
+              "vdem_corruption" = "Corruption index",
+              "vdem_delibdem" = "Deliberative democracy",
+              "vdem_statecapacity_scaled" = "Administrative capacity")
+
+library(gt)
+
+cox_table <- modelsummary(coxmodels,
+             stars = TRUE,
+             fmt = 2,
+             gof_map = c("nobs", "adj.r.squared", "bic"),
+             coef_map = scoef_map,
+             title = "Cox Regression Estimates Predicting the Probability of NGFS Membership",
+             notes = "Source: The data have been collected from the World Bank, the Network for Greening the Financial System, and the Varieties of Democracy (V-Dem) Project. Europe is the reference group for the region variable.",
+             align = "lddd",
+             output = "gt"
+) %>%
+  cols_width(
+    " " ~ px(200),
+    everything() ~ px(135)
+)
+
+cox_table
+
+modelplot(coxm3, 
+          coef_map = rev(scoef_map),
+          coef_omit = "Intercept", 
+          color = "black") + 
+          geom_vline(xintercept = 0, color = "darkgray", 
+                     linetype = "dashed", linewidth = .75) +
+          labs(title = "Figure 1: Predictors of NGFS Membership",
+               caption = "See appendix for data sources.")
+
+```
+
+Panel data analysis predicting greenhouse gas emissions based on NGFS membership
+
+```{r}
+#| label: Panel data models
+#| eval: false
+#| include: false
+
+panelfmt_data <- pdata.frame(gcb_data, 
+                         index = c("country",
+                                   "year"))
+
+# Two-way fixed effects based on Chesler et al. 2023
+
+twowaym1 <- plm(log_ed_ghg_emissions ~ factor(ngfs_member) + factor(cat_region),
+                data = panelfmt_data, 
+                model = "within",
+                index = c("country", "year"),
+                effect = "twoway")
+
+twowaym2 <- plm(log_ed_ghg_emissions ~ factor(ngfs_member) + factor(cat_region) + 
+                log_trade + log_gdp_pc + log_gdp_pc_growth_shifted + 
+                log_tot_nat_resources_shifted + 
+                log_pop_density + sqrt_agric_area + sqrt_forest_area,
+                data = panelfmt_data, 
+                model = "within",
+                index = c("country", "year"),
+                effect = "twoway")
+
+twowaym3 <- plm(log_ed_ghg_emissions ~ factor(ngfs_member) + factor(cat_region) + 
+                log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+                log_tot_nat_resources_shifted + 
+                log_pop_density + sqrt_agric_area + sqrt_forest_area + 
+                vdem_corruption + vdem_delibdem + vdem_statecapacity_scaled,
+                data = panelfmt_data, 
+                model = "within",
+                index = c("country", "year"),
+                effect = "twoway")
+
+twowaymodels <- list(
+    "Baseline" = twowaym1,
+    "Ecological and Economic Indicators" = twowaym2,
+    "Political Indicators" = twowaym3)
+
+coef_map2 <- c("factor(ngfs_member)1" = "NGFS Member",
+              "factor(cat_region)East + South Asia and Pacific" = "East + South Asia and Pacific",
+              "factor(cat_region)Latin America and Caribbean" = "Latin America and Caribbean",
+              "factor(cat_region)Middle East and Africa" = "Middle East and Africa",
+              "factor(cat_region)North America" = "North America",
+              "log_trade" = "Trade dependence",
+              "log_gdp_pc" = "GDP per capita",
+              "log_gdp_pc_growth_shifted" = "GDP per capita growth",
+              "log_tot_nat_resources_shifted" = "Natural resources",
+              "log_pop_density" = "Population growth",
+              "sqrt_agric_area" = "Agricultural land",
+              "sqrt_forest_area" = "Forest land",
+              "vdem_corruption" = "Corruption index",
+              "vdem_delibdem" = "Deliberative democracy",
+              "vdem_statecapacity_scaled" = "Administrative capacity")
+
+twoway_table <- modelsummary(twowaymodels,
+             stars = TRUE,
+             fmt = 2,
+             gof_map = c("nobs", "adj.r.squared", "bic"),
+             coef_map = coef_map2,
+             title = "Two-Way Fixed Effects Models Predicting the Log of Greenhouse Gas Emissions",
+             notes = "Source: The data have been collected from the World Bank, the Network for Greening the Financial System, and the Varieties of Democracy (V-Dem) Project. NGFS non-member and Europe are the reference groups for the NGFS and region variables, respectively.",
+             output = "gt"
+             )
+
+pcdtest(twowaym3, test = c("lm"))
+
+pcdtest(twowaym3, test = c("cd"))
+
+pbgtest(twowaym3)
+
+library(lmtest)
+library(sandwich)
+coeftest(twowaym3, vcov = vcovHC(twowaym3, type = "HC1", cluster = "group"))
+
+vcov_driscoll <- vcovSCC(twowaym3, type = "HC1", maxlag = 5)
+summary(twowaym3, vcov = vcov_driscoll)
+
+```
+
+```{r}
+#| label: DID Models
+#| eval: false
+
+library(fixest)
+
+library(fixest)
+
+# T-test for emissions before NGFS creation
+t.test(
+  log_ed_ghg_emissions ~ dngfs_member,
+  data = gcb_data %>% filter(year < ngfs_start_year)
+)
+
+# Create a treatment variable for NGFS membership
+gcb_data <- gcb_data %>%
+  mutate(treatment = ifelse(ngfs_member == 1 & year >= ngfs_start_year, 1, 0))
+
+# DiD regression model
+model <- feols(
+  log_ed_ghg_emissions ~ treatment * period + year + country,
+  data = gcb_data
+)
+
+# Summary of the model
+summary(model)
+
+# DID model using fixest
+did_model <- feols(
+  log_ed_ghg_emissions ~ treatment + log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+    log_tot_nat_resources_shifted + log_pop_density + sqrt_agric_area + sqrt_forest_area +
+    vdem_corruption + vdem_delibdem + vdem_statecapacity_scaled | country + year,
+  data = gcb_data
+)
+
+# Summarize results
+summary(did_model)
+
+library(did)
+
+gcb_data <- gcb_data %>%
+  mutate(country_id = as.numeric(as.factor(country)))
+
+gcb_data <- gcb_data %>%
+  group_by(country) %>%
+  filter(!(year == min(year) & treatment == 1)) %>%
+  ungroup()
+
+
+did_data <- gcb_data %>%
+  mutate(post_treatment = ifelse(year >= 2017, 1, 0)) # Indicator for post-treatment period
+
+# Estimate DID
+did_out <- att_gt(
+  yname = "log_ed_ghg_emissions",
+  tname = "year",
+  idname = "country",
+  gname = "post_treatment",
+  xformla = ~ log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+    log_tot_nat_resources_shifted + log_pop_density + sqrt_agric_area +
+    sqrt_forest_area + vdem_corruption + vdem_delibdem + vdem_statecapacity_scaled,
+  data = did_data
+)
+
+# Summarize results
+summary(did_out)
+
+```
+
+## Robustness checks
+
+```{r}
+#| label: Correlation matrix
+#| eval: false
+#| include: true
+
+# Correlation matrix
+datasummary_correlation(descriptives)
+
+```
+
+```{r}
+#| label: Additional Panel Models
+#| eval: false
+#| include: false
+
+# Two-way fixed effects
+
+twowaym3 <- plm(log_ed_ghg_emissions ~ factor(ngfs_member) + factor(cat_region) + 
+                log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+                log_tot_nat_resources_shifted + 
+                log_pop_density + sqrt_agric_area + sqrt_forest_area + 
+                vdem_corruption + vdem_delibdem + vdem_statecapacity_scaled,
+                data = panelfmt_data, 
+                model = "within",
+                index = c("country", "year"),
+                effect = "twoway"
+                )
+
+# Fixed Effects Model (Country-Level Effect)
+
+fec_linear <- plm(log_ed_ghg_emissions ~ factor(ngfs_member) + factor(cat_region) + 
+                log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+                log_tot_nat_resources_shifted + 
+                log_pop_density + sqrt_agric_area + sqrt_forest_area + 
+                vdem_corruption + vdem_delibdem + vdem_statecapacity_scaled,
+                data = panelfmt_data, 
+                model = "within",
+                index = c("country", "year"),
+                effect = "individual"
+                )
+
+# Random Effects
+
+re_linear <- plm(log_ed_ghg_emissions ~ factor(ngfs_member) + factor(cat_region) + 
+                log_trade + log_gdp_pc + log_gdp_pc_growth_shifted +
+                log_tot_nat_resources_shifted + 
+                log_pop_density + sqrt_agric_area + sqrt_forest_area + 
+                vdem_corruption + vdem_delibdem + vdem_statecapacity_scaled,
+                data = panelfmt_data,
+                model = "random",
+                index = c("country", "year")
+                )
+
+full_models <- list(
+    "Two-Way Fixed Effects" = twowaym3,
+    "Country Fixed Effects" = fec_linear,
+    "Random Effects" = re_linear
+)
+
+coef_map3 <- c("factor(ngfs_member)1" = "NGFS Member",
+              "log_trade" = "Trade dependence",
+              "log_gdp_pc" = "GDP per capita",
+              "log_gdp_pc_growth_shifted" = "GDP per capita growth",
+              "log_tot_nat_resources_shifted" = "Natural resources",
+              "log_pop_density" = "Population growth",
+              "sqrt_agric_area" = "Agricultural land",
+              "sqrt_forest_area" = "Forest land",
+              "vdem_corruption" = "Corruption index",
+              "vdem_delibdem" = "Deliberative democracy",
+              "vdem_statecapacity_scaled" = "Administrative capacity",
+              "factor(cat_region)East + South Asia and Pacific" = "East + South Asia and Pacific",
+              "factor(cat_region)Latin America and Caribbean" = "Latin America and Caribbean",
+              "factor(cat_region)Middle East and Africa" = "Middle East and Africa",
+              "factor(cat_region)North America" = "North America")
+
+fullmodels_table <- modelsummary(full_models,
+             stars = TRUE,
+             fmt = 2,
+             gof_map = c("nobs", "adj.r.squared", "bic"),
+             coef_map = coef_map3,
+             title = "Different Full Models Predicting the Log of Greenhouse Gas Emissions",
+             notes = "Source: The data have been collected from the World Bank, the Network for Greening the Financial System, and the Varieties of Democracy (V-Dem) Project. NGFS non-member and Europe are the reference groups for the NGFS and region variables, respectively.",
+             output = "gt"
+             )
+
+modelsummary(panel_models,
+             stars = TRUE,
+             fmt = 2,
+             #vcov = "robust",
+             gof_map = c("nobs", "adj.r.squared", "bic"),
+             #exponentiate = TRUE,
+             output = "gt"
+             )
+```

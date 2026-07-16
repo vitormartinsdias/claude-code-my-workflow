@@ -1,0 +1,918 @@
+---
+title: |-
+    Supplementary materials for \
+    Greening while Governing the Economy: \ 
+    Central Banks Matter to Decarbonization
+# author: |-
+#    Vitor M. Dias \
+#    [vmartinsdias@butler.edu](mailto:vmartinsdias@butler.edu)
+number-sections: true
+toc: true
+toc-title: "Table of Contents"
+fig-cap-location: bottom
+tbl-cap-location: bottom
+fig-align: center
+tbl-align: center
+format:
+  pdf:
+    documentclass: article
+    linkcolor: blue
+    urlcolor: blue
+    papersize: letter
+    fontsize: 12pt
+    geometry: margin=1in
+    fig-pos: "H"
+    include-in-header: 
+      text: |
+        \usepackage[bottom]{footmisc}
+        \usepackage{setspace}
+        \usepackage{parskip}
+        \setlength{\parindent}{20pt}
+        \usepackage{sectsty}
+        \sectionfont{\fontsize{12}{15}\selectfont}
+        \subsectionfont{\fontsize{12}{15}\selectfont}
+        \usepackage{fancyhdr}
+        \fancyhead{}
+        %\fancyhead[L]{\small\textit{Work in progress. Please do not circulate.}}
+        \pagestyle{fancy}
+        \renewcommand{\headrulewidth}{0pt}
+        \usepackage{tocloft}
+        \renewcommand{\cftsecdotsep}{\cftdotsep}
+        \renewcommand{\thefigure}{S\arabic{figure}}
+        \renewcommand{\thetable}{S\arabic{table}}
+        \renewcommand{\figurename}{Fig.}
+        \renewcommand{\tablename}{Table}
+    keep-tex: true
+  docx: 
+    crossref: 
+      fig-title: "Fig. S"
+      tbl-title: "Table S"
+      fig-prefix: "Fig. S"
+      tbl-prefix: "Table S"
+execute: 
+  eval: true
+  echo: false
+  warning: false
+  error: false
+  include: true
+csl: "/Users/vmartinsdias/Zotero/styles/science.csl"
+bibliography: "/Users/vmartinsdias/Zotero/references.bib"
+---
+
+{{<pagebreak>}}
+
+## Materials
+
+### Dependent Variable: Greenhouse Gas Emissions
+
+My dependent variable consists of greenhouse gas (GHG) emissions. The data have been collected from the Emissions Database for Global Atmospheric Research (EDGAR) developed by the European Commission's Joint Research Centre [@crippa2025]. The dataset is publicly available (<https://edgar.jrc.ec.europa.eu/dataset_ghg2025>) and has been widely used [e.g., @kakenmaster2025; @stechemesser2024]. EDGAR has separate estimates for countries' total carbon dioxide ($\text{CO}_2$), methane ($\text{CH}_4$), nitrous oxide ($\text{N}_2\text{O}$), and fluorinated gases, as well as total GHG emissions measured in millions of
+$\text{CO}_2$ equivalent, which is the one I use in this article. From the original spreadsheets downloaded from EDGAR, I extracted the total GHG emissions data for the years 2001 to 2021. 
+
+EDGAR details its methodology to calculate emissions here: <https://edgar.jrc.ec.europa.eu/methodology>. Specifically, EDGAR quantifies global anthropogenic emissions by applying a consistent estimation framework across all countries and economic sectors by year. This approach ensures a highly comparable data baseline across heterogeneous regulatory regimes and distinct gas categories. Only two countries needed to be excluded from the assessment due to missing data on the dependent variable: Marshall Islands and Northern Mariana Islands.
+
+I use GHG emissions as a dependent variable based on three specifications. First, given the skewed distribution of GHG emissions across countries and years, I transformed this variable to a logarithmic format. Additionally, I normalized GHG emissions by the log of countries' total population to obtain a measure of emissions per capita. I also normalized GHG emissions by the log of gross domestic product (GDP) per capita (PC) to account for economic and consumption differences across countries. The normalization process involves taking the logarithm of the ratio of GHG emissions to the population or GDP PC. An example of emissions per capita is expressed mathematically as:
+
+$$
+\log(ghgpc_{i,t}) = \log(ghg_{i,t}) - \log(pop_{i,t})
+$$ {#eq-normalization}
+
+where $\log(ghgpc_{i,t})$ is the log-transformed emissions per capita variable for country $i$ in year $t$. $\log(ghg_{i,t})$ is the log of GHG emissions. $\log(pop_{i,t})$ is the normalization variable in its log-transformed version. In the @eq-normalization example, I use population, but the same process applies to GDP per capita. I explain from which repositories the other variables have been collected and how I have built a merged dataset below.
+
+### Independent and Control Variables
+
+#### NGFS
+
+My main independent variable is membership in the Network for Greening the Financial System (NGFS), which serves as a treatment indicator of financial regulators' commitment to incorporate climate risks into financial supervision. The NGFS maintains their membership directory updated and publicly available here: <https://www.ngfs.net/en/about-us/membership>. However, the NGFS does not specify the year in which financial supervisors have become members or observers. In March 2024, NGFS officers provided a spreadsheet containing the years in which each member and observer joined the network until then. Since this is not available through the website above, the e-mail exchange and the original spreadsheet shared by the NGFS are available upon request for reviewers and editors. I excluded observers and restricted the NGFS data to members only between 2001 and 2021. 
+
+Subsequently, I identified each country where financial supervisors are located and recorded the year a nation joined the NGFS. This way, countries are not double counted. Abu Dhabi, Dubai, and the European Union (EU) were also removed from the data. Abu Dhabi and Dubai count as "United Arab Emirates", whereas several EU nations appear independently in the dataset. I then created a dummy variable, `ngfs`, indicating NGFS membership and assigned a value of 1 to countries in the year in which they became NGFS members and 0 to non-members. Thus, non-members include nations *before* they joined the NGFS and countries that never became members within the period analyzed. Consider, for example, how France has been coded in @tbl-france-ngfs, as the Banque de France helped found the NGFS in 2017 [@helleiner2025].
+
+{{<pagebreak>}}
+
+```{r}
+#| label: settings
+#| include: false
+
+rm(list = ls())
+
+options(digits = 2)
+
+```
+
+```{r}
+#| label: tbl-france-ngfs
+#| tbl-cap: "Example of NGFS Membership Coding: France"
+#| tbl-pos: H
+
+library(dplyr)
+library(kableExtra)
+
+# Loading the data
+
+gcb_clean_data <- readRDS("gcb_clean_data.rds")
+
+# Filtering the dataset for France and selecting the relevant columns
+
+gcb_clean_data |>
+  filter(country == "France") |>
+  select(country, year, ngfs_member) |>
+  kable(
+    col.names = c("Country", "Year", "NGFS Member"),
+    align = "ccc"
+  ) |>
+  kable_styling()
+
+rm(list =  )
+
+```
+
+As a result of the steps above, I built an initial $country \times year$ dataset, which I merged with other repositories from which other variables were obtained. In sum, the cross-sectional unit $i$ is a country, which appears in each year $t$ over a period of time. I detail other methodological decisions that resulted in the tidy, merged, final dataset used for the analysis in @sec-methods.
+
+#### Central Bank Independence Index
+
+A second independent variable of interest is central bank independence (CBI) [@garriga2025; @romelli2022], which is publicly available (<https://sites.google.com/site/carogarriga/cbi-data-1>). CBI is an index ranging from 0 to 1, where 0 represents no independence and 1 denotes maximum independence [@garriga2025]. The index considers four formal attributes of central banks: (i) personnel independence of a central bank's executive leadership; (ii) having exclusive power or not over price stability mandate in terms of policy objectives; (iii) independence in policy formulation to devise rules, norms, and regulations; and (iv) lending limitations when furnishing money to the own government [@garriga2025, 3]. These metrics are compiled into two operational variables: an unweighted index that computes the simple average of all four components; and a weighted index that mathematically penalizes loose sovereign lending rules by weighting restriction variables more heavily.
+
+I use Garriga's [-@garriga2025] weighted CBI index for two reasons. First, it "represents a 46 percent extension of the coverage of the most comprehensive dataset on de jure CBI available to date (Garriga 2016). On average, this dataset includes fifty four more countries per year than Bodea and Hicks (2015b, updated to 2020), thirty seven more than Romelli (2022),and twenty two more than Garriga (2016)" [@garriga2025, 2]. And second, it offers more conservative estimates than other CBI datasets: "Due to systematically missing data on countries for whom information is harder to obtain, previous research may have overestimated the level of CBI in the world, which may have biased inferences based on smaller samples" [@garriga2025, 2]. Therefore, this dataset provides more data on developing nations over a longer period of time than other repositories, and it helps address potential issues with overestimating CBI. As a robustness check, I also tested the unweighted index and found similar results (see @sec-robustness).
+
+#### World Bank
+
+Following Chesler et al. [-@chesler2023], a set of control variables includes data from the World Bank, which have been collected using the `wbstats` package in `R` [@sepulveda2025]. To normalize the distribution of the controls either as a logarithm or square root, they were transformed based on the closest to a normal distribution displayed using the `gladder` function of the `describedata` package also in `R` [@mcgowan2025]. Essentially, `gladder` plots a series of potential variable transformations while showing a normal distribution line on each transformation. The indicators are the following.
+
+**Log of GDP per capita** accounts for a country's standard of living and its population purchasing power, which has long been positively correlated with higher emissions [@chesler2023]. **Log of GDP per capita growth**, in turn, measures economic growth and whether the income level per person has increased or decreased, and it also reflects an increase in emissions [@chesler2023]. **Log of population growth** follows demographic trends regarding population size, which yields inconclusive results for emissions when controlling for other factors like GDP per capita.^[This has been a long debate that traces back to Ostrom's [@ostrom1990] work on challenging the assumption that population growth inherently leads to the depletion of natural resources.] **Log of total natural resources rented** is likely positively associated with higher emissions [@chesler2023], and it consists of the sum of, e.g., oil, forests, and mineral rents, among other assets, rented as a percentage of a nation's GDP. **Log of trade dependency** is measured as the ratio of a country's total trade to GDP, and the circulation of products tends to increase emissions [@chesler2023]. **Square root of agricultural land** refers to arable areas used either for temporary or permanent crops as a percentage of total land, which may also produce higher emission levels [@chesler2023]. And, conversely, the **square root of forest land** refers to areas natural or planted trees as a percentage of total land, which might help offset emissions increased by land use and land cover change.
+
+#### Varieties of Democracy
+
+Also drawing from Chesler et al. [-@chesler2023], as well as Kakenmaster [-@kakenmaster2025], political indicators were collected from the Varieties of Democracy (VDM) project using the `vdem` package in `R` [@maerz2026; @coppedge2026vdem]. The VDEM variables are the following. **Political corruption index** (`v2x_corr`) ranges from 0 to 1, corresponding to the less corrupt to the more corrupt nations. Corruption levels shape the relationship between political regimes and GHG emissions [@kakenmaster2025; @povitkina2018], with growing levels of corruption being associated with higher emissions. **Deliberative democracy index** (`v2x_delibdem`) also ranges from 0 to 1, with higher values denoting more effective deliberative democratic processes and a focus on common goods. As deliberations are key in climate and environmental governance [@ostrom1990; @ostrom2005], it is expected a negative relationship between deliberative democracy values and GHG emissions. Finally, following Vaccaro [-@vaccaro2023], I select a variable of **state capacity** (`v2clrspct`) that captures the extent to which state agents can abide to the law while pursuing their mandates while arbitrariness and biased public administration are limited. I employed min-max re-scaling for state capacity to range from 0 to 1,^[The min-max normalization is mathematically expressed as 
+$$
+\text{State Capacity}_{i,t}^{\text{scaled}} = \frac{\text{State Capacity}_{i,t} - \min(\text{State Capacity})}{\max(\text{State Capacity}) - \min(\text{State Capacity})}
+$$
+where $\text{State Capacity}_{i,t}$ represents the raw state capacity score for country $i$ in year $t$, and $\min(\text{State Capacity})$ and $\max(\text{State Capacity})$ are the sample minimum and maximum values, respectively.] such as the other VDEM indicators. The higher the score, the higher the levels of capacity, which, in turn, are presumed to be associated with the ability to integrate financial and climate policies.
+
+## Methodology{#sec-methods}
+
+Methodological decisions often entail considering trade-offs, particularly with respect to dropping observations and selecting a timeframe for analysis. Here, the example displayed in @tbl-france-ngfs raises two main issues. First, by creating a dataset spanning 2001 and 2024, the pre-treatment period---before 2017---has a disproportionate number of years for which a country being an NGFS member equals 0. This issue could overestimate the magnitude of the treatment effect.
+
+Second, several control variables obtained from the World Bank had missing data for the years between 2021 and 2024, when I received the NGFS membership data. Because this is one of the first studies relying on NGFS participation as a treatment indicator using real-world data with observed values, I have prioritized to be as conservative as possible with missing data. Hence, I use listwise deletion. As Pepinsky [-@pepinsky2018, 487] notes, "Only knowing the true values from the fully observed data allows us to compare the performance of [listwise deletion and multiple imputation]. But this exercise clearly reveals that multiple imputation can change substantive conclusions in real-world applications, and in this case, those conclusions will frequently be more misleading than those that come from listwise deletion." I acknowledge that this approach might present issues also discussed by Pepinsky [-@pepinsky2018]. However, since I use indicators based on real-world observed values and I aim to estimate conservative coefficients employing causal inference techniques, my main goal has been to work using a balanced panel dataset. 
+
+To deal with the first issue above, I further restricted the initial dataset to the period between 2013 and 2023. And, to address the second issue, I ensure that each country appears in every single year with no missing data on the dependent and independent variables. These steps result in a balanced panel dataset that is suitable for both standard TWFE modeling, as well as subsequent and more robust difference-in-differences analysis. The DID with TWFE models are based on a $country \times year$ sample of 145 nations that appear over 11 years, resulting in $N = 1,595$.
+
+### Descriptive Statistics
+
+For an overview of the data, I break down the descriptive statistics by NGFS membership. @tbl-desc-stats highlights the differences between groups. This includes nations before they received the treatment, after the treatment, and countries that never joined the NGFS.
+
+```{r}
+#| label: tbl-desc-stats
+#| tbl-cap: "Descriptive statistics by NGFS membership treatment (N = 931)"
+#| tbl-pos: H
+
+library(expss)
+library(tidyverse)
+library(gtsummary)
+library(gt)
+
+# Loading the data
+
+gcb_clean_data <- readRDS("gcb_clean_data.rds")
+
+# Handling the dependent and independent vars.
+
+gcb_clean_data <- gcb_clean_data |>
+  mutate(
+  ngfs_member = as.factor(ngfs_member),
+  log_ghg_gdppc = as.numeric(log_ed_ghg_emissions - log_gdp_pc),
+  log_pop = as.numeric(log(pop_total)),
+  log_ghg_pc = as.numeric(log_ed_ghg_emissions - log_pop) 
+  )
+
+# Relabeling CBI
+
+descriptives <- gcb_clean_data |>
+  apply_labels(
+    cbi_unweighted = "Central Bank Independence Index",
+    cbi_weighted = "Central Bank Independence Index (Weighted)"
+  )
+
+# Relabeling the other variables
+
+descriptives <- descriptives |>
+  mutate(ngfs_member = ifelse(ngfs_member == 1, "Member", "Non-Member")) |>
+  select(
+    ngfs_member,
+    "Greenhouse gas emissions" = "log_ed_ghg_emissions",
+    "Greenhouse gas emissions per GDP per capita" = "log_ghg_gdppc",
+    "Greenhouse gas emissions per capita" = "log_ghg_pc",
+    "Trade dependence" = "log_trade",
+    "GDP per capita" = "log_gdp_pc",
+    "GDP per capita growth" = "log_gdp_pc_growth_shifted",
+    "Natural resources" = "log_tot_nat_resources_shifted",
+    "Population growth" = "log_pop_growth_shifted",
+    #         "Population density" = "log_pop_density",
+    "Agricultural land" = "sqrt_agric_area",
+    "Forest land" = "sqrt_forest_area",
+    # "Corruption index (0-1)" = "vdem_corruption",
+    "Deliberative democracy index (0-1)" = "vdem_delibdem",
+    "Central bank independence index (0-1, weighted)" = "cbi_weighted",
+    # "Rule of law index" = "vdem_rulelaw",
+    # "State capacity index (0-1)" = "vdem_statecapacity_scaled",
+    # "Central Bank Independence Index" = "cbi_unweighted",
+    "Region" = "cat_region"
+  )
+
+desc_table <- descriptives |>
+  tbl_summary(
+    by = ngfs_member,
+    statistic = list(
+      all_continuous() ~ "{mean} ({sd})",
+      all_categorical() ~ "{n} ({p}%)"
+    )
+  ) |>
+  add_p() |>
+  bold_p() |>
+  modify_footnote(everything() ~ NA) |>
+  modify_header(label = "**Variable**") |>
+  as_gt() |>
+#  tab_header(
+#    title = md(
+#      "Descriptive Statistics by Network for Greening the Financial System #Membership <br> Country x Years between 2010 and 2021 (N = 1,596)"
+#    )
+#  ) |>
+  tab_source_note(
+    source_note = md(
+      "The values correspond to the mean for continuous 
+      variables and the proportion for categorical variables. The standard 
+      deviation for the continuous variables is shown in parentheses."
+    )
+  ) |>
+  cols_label(
+    stat_1 = md("**Member** <br> N = 193"),
+    stat_2 = md("**Non-Member** <br> N = 738"),
+    p.value = md("**Differences** <br> p-value")
+  ) |>
+  cols_width(
+    label ~ pct(45),
+    starts_with("stat_") ~ pct(20),
+    p.value ~ pct(15)
+  ) |>
+  tab_style(
+    style = cell_text(align = "center"),
+    locations = cells_column_labels(columns = -label) 
+  )
+
+desc_table
+
+```
+
+@tbl-desc-stats reveals some significant differences worth noting. NGFS members ($n = 193$) emit substantially more GHG in absolute terms than non-members ($n = 738$) (mean log GHG = 11.83 vs. 10.83, $p < 0.001$). This gap reflects the NGFS structure: Early adopters are predominantly industrialized economies whose central banks have the capacity and political motivation to engage with international financial governance [@helleiner2025]. Compared to non-members, NGFS members are notably wealthier (log GDP per capita: 9.86 vs. 8.43, $p < 0.001$), more trade-exposed (4.41 vs. 4.25, $p = 0.005$), and score higher on deliberative democracy (0.60 vs. 0.40, $p < 0.001$).  At the same time,  emissions per GDP per capita are lower among NGFS members as opposed to non-members (1.97 vs. 2.40, $p = 0.004$). These systematic differences underscore that standard  before-after or cross-sectional models may produce unreliable estimates of the NGFS effect on emissions, motivating the within-country identification strategy I employ here.
+
+Indeed, the regional distribution of NGFS membership reinforces this concern. Europe and Central Asia account for nearly half of all member-country observations (49%) but less than a third of non-member observations (29%). By contrast, Middle East and Africa, which represent 42% of non-member observations, represent only 15% of NGFS member observations. Yet, GDP per capita growth does not differ significantly between members and non-members (3.93 vs. 3.94, $p = 0.5$). This similarity in growth trajectories matters: It suggests that the emissions reduction are not explained by members simply growing more slowly than non-members. Instead, it is consistent with pathways to decarbonization rather than economic deceleration. Relatedly, central bank independence is slightly but significantly higher among members (0.66 vs. 0.62, $p < 0.001$). This pattern suggests that central banks need some level of statutory insulation from short-term political interference before they can extend their monetary mandate to design policies targeted at handling environmental externalities.
+
+The differences in @tbl-desc-stats have both statistical and practical implications. Substantively, NGFS membership has thus far been concentrated among nations whose central banks already operate in well-developed regulatory environments. This feature may amplify the conditional effects related to the independence of financial supervisors. Empirically, the variation in CBI among NGFS members and non-members is modest in magnitude but important to further test whether and how CBI works as a moderator or mediation variable in the models discussed in @sec-models. Finally, the sample differences also raise questions about whether the findings generalize beyond the current NGFS membership composition, which I address by conducting robustness checks (see @sec-robustness).
+
+::: {.callout-note}
+
+I need to double check how best to conduct the robustness check above on sample composition.
+
+:::
+
+## Regression Results {#sec-models}
+
+Given the properties of the data, I take separate but related steps to calculate the effect of NGFS membership on emissions and how it is moderated or mediated by central bank independence. First, I fit a set of two-way fixed-effect models. Subsequently, I use the `did` package in `R` to conduct difference-in-differences analysis per Callaway and Sant'Anna [-@callaway2021] followed by a robustness check based on Sun and Abraham [-@sun2021]. Lastly, I conclude by examining the marginal effects stemming from the interaction between NGFS membership and the CBI index, as well as a mediation analysis of the relationship between these two variables. 
+
+## Robustness Checks {#sec-robustness}
+
+```{r}
+#| label: did-rob-setup
+
+library(did)
+library(HonestDiD)
+
+# Countries that never join are coded 0 (the did package convention for never-treated).
+# Countries that join are coded with the calendar year of first treatment.
+
+gcb_clean_data <- gcb_clean_data |>
+  group_by(country) |>
+  mutate(
+    first_treat = if (any(ngfs_member == 1)) {
+      min(year[ngfs_member == 1])
+    } else {
+      0L  # 0 = never treated (did package convention)
+    },
+    first_treat = as.integer(first_treat)
+  ) |>
+  ungroup()
+
+# Numeric country ID variable creation
+
+gcb_clean_data <- gcb_clean_data |>
+  mutate(country_id = as.integer(as.factor(country)))
+
+# How many years before/after joining the NGFS
+# Never-treated obs get NA
+
+gcb_clean_data <- gcb_clean_data |>
+  mutate(
+    rel_time = case_when(
+      first_treat == 0 ~ NA_real_,
+      TRUE ~ as.numeric(year - first_treat)
+    ),
+    rel_time = as.integer(rel_time)
+  )
+
+# Checking distribution of first treatment years
+
+gcb_clean_data |>
+  filter(first_treat != 0) |>
+  distinct(country, first_treat) |>
+  count(first_treat) |>
+  print()
+
+# Randomizing numbers for replication
+
+set.seed(02839)
+
+gcb_clean_data <- gcb_clean_data |>
+  mutate(first_treat = as.numeric(first_treat))
+
+cs_attgt <- att_gt(
+  yname        = "log_ed_ghg_emissions",
+  tname        = "year",
+  idname       = "country_id",
+  gname        = "first_treat",
+  data         = gcb_clean_data,
+  control_group = "nevertreated",
+  est_method   = "dr",
+  base_period  = "universal",  # Uses a common base period for pre-trends
+  clustervars  = "country_id",
+  print_details = FALSE
+)
+
+cs_att_nyett <- att_gt(
+  yname        = "log_ed_ghg_emissions",
+  tname        = "year",
+  idname       = "country_id",
+  gname        = "first_treat",
+  data         = gcb_clean_data,
+  control_group = "notyettreated",
+  est_method   = "dr",
+  base_period  = "universal",  # Uses a common base period for pre-trends
+  clustervars  = "country_id",
+  print_details = FALSE
+)
+
+# --- Aggregation 2: Dynamic / event-study aggregation ---
+# ATT(l) where l is event-time (years since treatment).
+# Negative l values are pre-treatment periods — these should be near zero
+# if parallel trends holds. This is your pre-trends test.
+
+cs_dynamic <- aggte(cs_attgt, type = "dynamic", na.rm = TRUE)
+
+```
+
+### HonestDiD Sensitivity Analysis
+
+Rambachan and Roth (2023, *Review of Economic Studies*) show that the parallel-trends identifying assumption in an event-study design can be relaxed to allow for some amount of post-treatment violation, bounded by the observed pre-treatment violations. The `HonestDiD` package implements this directly on a `did::aggte()` dynamic (event-study) object, so the sensitivity analysis below relies entirely on the package's own `honest_did()` method rather than hand-built moment/covariance code.
+
+```{r}
+#| label: honestdid-sens
+
+# honest_did() is defined in HonestDiD but, as of the version on GitHub/CRAN
+# (0.2.8), the S3 method for "AGGTEobj" objects from the did package is not
+# exported and not registered for automatic S3 dispatch. Pulling it in this
+# way (as recommended in the package's own "HonestDiD and the did package"
+# vignette) still uses the package's built-in logic verbatim -- nothing below
+# is manually derived.
+
+honest_did <- HonestDiD:::honest_did.AGGTEobj
+
+# Sensitivity for the ATT at event time e = 0 (the first post-treatment
+# period), using the never-treated comparison group event study (cs_dynamic)
+# estimated with a universal base period, as required by honest_did().
+
+# --- Smoothness restriction: Delta^{SD}(M) ---
+# Bounds how much the slope of the pre-trend can change from one period to
+# the next in the post-treatment periods (relative to the pre-period trend).
+#
+# method = "Conditional" (an ARP grid-search test, also built into HonestDiD)
+# is used instead of the package default ("FLCI"), which solves a convex
+# program through CVXR. On this event study CVXR's ECOS solver intermittently
+# returns status "optimal_inaccurate" on that program, which HonestDiD's own
+# FLCI code silently accepts as valid (see createSensitivityResults source)
+# but still surfaces as a "Solution may be inaccurate" warning. Conditional
+# sidesteps the solver rather than silencing a warning about a result whose
+# accuracy was never actually verified.
+
+hd_smooth <- honest_did(
+  cs_dynamic,
+  e      = 0,
+  type   = "smoothness",
+  method = "Conditional"
+)
+
+# --- Relative magnitude restriction: Delta^{RM}(Mbar) ---
+# Bounds post-treatment violations of parallel trends to be no more than
+# Mbar times the largest pre-treatment violation.
+#
+# honest_did() searches for the robust CI over a grid (grid.lb to grid.ub,
+# gridPoints steps) and defaults to +/-20 times the SE of the ATT estimate.
+# For Mbar close to or above 1 here, the true robust CI is wider than that
+# default range, so the search silently clips at the grid edge instead of
+# finding where the CI actually stops -- reported bounds for those Mbar
+# values would be wrong, not just imprecise (visible as several identical
+# lb/ub pairs across different Mbar in the unclipped run, and flagged by
+# HonestDiD's own "CI is open at one of the endpoints" warning). The fix is
+# to widen the grid rather than suppress the warning: grid_bound is set from
+# honest_did()'s own original-CI half-width (50x, chosen so the widest
+# post-restriction CI still falls well inside it) instead of a hardcoded
+# number, so it scales with the data if the estimates change on a future run.
+# gridPoints is raised from the package default (1000) to preserve
+# resolution over the wider range; this materially slows this chunk down
+# (roughly 2 minutes).
+
+grid_bound <- 50 * as.numeric(hd_smooth$orig_ci$ub - hd_smooth$orig_ci$lb) / 2
+
+hd_relmag <- honest_did(
+  cs_dynamic,
+  e          = 0,
+  type       = "relative_magnitude",
+  grid.lb    = -grid_bound,
+  grid.ub    = grid_bound,
+  gridPoints = 2000
+)
+
+# Original (non-robust) CS confidence interval for reference
+
+hd_smooth$orig_ci
+hd_relmag$orig_ci
+
+# Robust confidence intervals under each restriction
+
+hd_smooth$robust_ci
+hd_relmag$robust_ci
+
+# Breakdown values: the smallest M (or Mbar) at which the robust confidence
+# interval first includes zero -- i.e., how much of a parallel-trends
+# violation the result can tolerate before losing significance.
+
+breakdown_smooth <- hd_smooth$robust_ci |>
+  filter(lb <= 0 & ub >= 0) |>
+  slice_min(M, n = 1)
+
+breakdown_relmag <- hd_relmag$robust_ci |>
+  filter(lb <= 0 & ub >= 0) |>
+  slice_min(Mbar, n = 1)
+
+breakdown_smooth
+breakdown_relmag
+
+# --- Relative magnitude restriction on the average post-treatment ATT ---
+# honest_did.AGGTEobj() only targets a single event-time coefficient (one
+# basis vector per call, chosen via its e argument); it has no option for a
+# pooled post-treatment estimate. To test the sensitivity of the *overall*
+# dynamic ATT that cs_dynamic$overall.att reports (the equally-weighted
+# average of ATT(0) through ATT(6), -0.088) rather than just ATT(0),
+# betahat/sigma/l_vec have to be assembled directly and passed to
+# createSensitivityResults_relativeMagnitudes(). Every piece below is still
+# built from the package's own outputs -- the dynamic influence function,
+# and the same reference-period exclusion and sandwich-covariance formula
+# honest_did.AGGTEobj() uses internally (verified to match: see V construction
+# in HonestDiD:::honest_did.AGGTEobj) -- not re-derived from scratch.
+
+# Reference period (e = -1) has NA SE by construction (base_period =
+# "universal" normalizes ATT(-1) = 0), so it carries no information and is
+# dropped, mirroring honest_did.AGGTEobj()'s own exclusion.
+
+keep <- which(!is.na(cs_dynamic$se.egt))
+egt_k <- cs_dynamic$egt[keep]
+betahat_avg <- cs_dynamic$att.egt[keep]
+inf_keep <- cs_dynamic$inf.function$dynamic.inf.func.e[, keep, drop = FALSE]
+n_avg <- nrow(inf_keep)
+
+sigma_avg <- crossprod(inf_keep) / (n_avg^2)
+
+numPrePeriods_avg <- sum(egt_k < 0)
+numPostPeriods_avg <- sum(egt_k >= 0)
+
+# Equal weight on every post-treatment event time targets the simple average
+# ATT(0)...ATT(6) -- confirmed to reproduce cs_dynamic$overall.att exactly.
+
+l_vec_avg <- rep(1 / numPostPeriods_avg, numPostPeriods_avg)
+
+# constructOriginalCS() is the same built-in helper honest_did.AGGTEobj()
+# calls for its non-robust benchmark CI.
+
+hd_relmag_avg <- list(
+  orig_ci = constructOriginalCS(
+    betahat        = betahat_avg,
+    sigma          = sigma_avg,
+    numPrePeriods  = numPrePeriods_avg,
+    numPostPeriods = numPostPeriods_avg,
+    l_vec          = l_vec_avg
+  )
+)
+
+# Same grid-widening fix as the e = 0 relative-magnitude call above, and for
+# the same reason: the default +/-20 SE search grid clips at Mbar >= 1 for
+# this target as well.
+
+grid_bound_avg <- 50 * as.numeric(hd_relmag_avg$orig_ci$ub - hd_relmag_avg$orig_ci$lb) / 2
+
+hd_relmag_avg$robust_ci <- createSensitivityResults_relativeMagnitudes(
+  betahat        = betahat_avg,
+  sigma          = sigma_avg,
+  numPrePeriods  = numPrePeriods_avg,
+  numPostPeriods = numPostPeriods_avg,
+  l_vec          = l_vec_avg,
+  Mbarvec        = seq(0, 2, by = 0.5),
+  grid.lb        = -grid_bound_avg,
+  grid.ub        = grid_bound_avg,
+  gridPoints     = 2000
+)
+
+hd_relmag_avg$orig_ci
+hd_relmag_avg$robust_ci
+
+breakdown_relmag_avg <- hd_relmag_avg$robust_ci |>
+  filter(lb <= 0 & ub >= 0) |>
+  slice_min(Mbar, n = 1)
+
+breakdown_relmag_avg
+
+# --- Exact breakdown Mbar (root-finding) ---------------------------------
+# breakdown_relmag / breakdown_relmag_avg above only report the smallest
+# Mbar *on the grid already computed* (spacing ~0.22 for ATT(0), 0.5 for
+# the overall average) whose robust CI happens to cover zero -- that
+# grid point is an upper bound on the true breakdown value, not the value
+# itself. The code below pins the exact number down: it treats the robust
+# CI bound nearer to zero (lb if the original estimate is positive, ub if
+# negative) as a function of Mbar and uses uniroot() to find exactly where
+# that bound crosses zero, re-solving createSensitivityResults_relativeMagnitudes()
+# at each trial Mbar. The search is bracketed between the last grid point
+# that still excluded zero and the first one that included it, so uniroot
+# only ever evaluates Mbar values in between -- this is the precise number
+# of "Mbar units" of allowed relative-magnitude violation the result
+# survives before the robust 95% CI stops excluding zero.
+
+# Finds [lo, hi] on an already-computed robust_ci grid such that the CI
+# excludes zero at lo and includes zero at hi. Returns NULL if the CI
+# never includes zero anywhere on the grid tested (result survives at
+# least the largest Mbar tested) or if it includes zero already at Mbar = 0
+# (result is not significant even without any allowed violation).
+bracket_from_grid <- function(robust_ci) {
+  g <- robust_ci |> arrange(Mbar)
+  incl <- g$lb <= 0 & g$ub >= 0
+  if (!any(incl)) return(NULL)
+  hi_idx <- which(incl)[1]
+  if (hi_idx == 1) return(c(lo = 0, hi = g$Mbar[1]))
+  c(lo = g$Mbar[hi_idx - 1], hi = g$Mbar[hi_idx])
+}
+
+# ci_fun(Mbar) must return a one-row robust CI (with lb/ub columns) for
+# that single Mbar. tol controls the precision of the returned Mbar.
+find_breakdown_mbar <- function(ci_fun, orig_ci, mbar_lo, mbar_hi, tol = 1e-4) {
+  # For a positive original estimate, the bound that moves toward zero as
+  # Mbar grows is lb, and it is positive while the CI still excludes zero.
+  # For a negative estimate, the moving bound is ub, but the sign
+  # convention is reversed: ub is *negative* while the CI still excludes
+  # zero and crosses to positive once the CI includes zero. Negating ub in
+  # that branch makes f() follow the same convention in both cases
+  # (positive = excludes zero, <= 0 = includes zero), so the checks below
+  # and uniroot()'s sign-change requirement work correctly either way.
+  bound_is_lb <- as.numeric(orig_ci$ub + orig_ci$lb) > 0
+  f <- function(Mbar) {
+    ci <- ci_fun(Mbar)
+    if (bound_is_lb) ci$lb else -ci$ub
+  }
+  f_lo <- f(mbar_lo)
+  if (f_lo <= 0) return(mbar_lo)
+  f_hi <- f(mbar_hi)
+  if (f_hi > 0) return(NA_real_) # CI doesn't actually cross zero in [lo, hi]
+  uniroot(f, lower = mbar_lo, upper = mbar_hi, tol = tol)$root
+}
+
+# ATT(0): re-solves via honest_did() (same call as hd_relmag above) so the
+# exact search uses the identical construction as the reported robust CI.
+relmag_ci_e0 <- function(Mbar) {
+  honest_did(
+    cs_dynamic,
+    e          = 0,
+    type       = "relative_magnitude",
+    Mbarvec    = Mbar,
+    grid.lb    = -grid_bound,
+    grid.ub    = grid_bound,
+    gridPoints = 2000
+  )$robust_ci
+}
+
+bracket_e0 <- bracket_from_grid(hd_relmag$robust_ci)
+
+breakdown_relmag_exact <- if (is.null(bracket_e0)) {
+  NA_real_
+} else {
+  find_breakdown_mbar(relmag_ci_e0, hd_relmag$orig_ci, bracket_e0["lo"], bracket_e0["hi"])
+}
+
+# Overall average ATT(0)...ATT(6): re-solves directly with the same
+# betahat_avg/sigma_avg/l_vec_avg inputs used to build hd_relmag_avg above.
+relmag_ci_avg <- function(Mbar) {
+  createSensitivityResults_relativeMagnitudes(
+    betahat        = betahat_avg,
+    sigma          = sigma_avg,
+    numPrePeriods  = numPrePeriods_avg,
+    numPostPeriods = numPostPeriods_avg,
+    l_vec          = l_vec_avg,
+    Mbarvec        = Mbar,
+    grid.lb        = -grid_bound_avg,
+    grid.ub        = grid_bound_avg,
+    gridPoints     = 2000
+  )
+}
+
+bracket_avg <- bracket_from_grid(hd_relmag_avg$robust_ci)
+
+breakdown_relmag_avg_exact <- if (is.null(bracket_avg)) {
+  NA_real_
+} else {
+  find_breakdown_mbar(relmag_ci_avg, hd_relmag_avg$orig_ci, bracket_avg["lo"], bracket_avg["hi"])
+}
+
+cat(sprintf(
+  "ATT(0) survives relative-magnitude violations up to Mbar = %s before the robust 95%% CI includes zero.\n",
+  ifelse(is.na(breakdown_relmag_exact), "> max Mbar tested", round(breakdown_relmag_exact, 4))
+))
+cat(sprintf(
+  "Overall average ATT survives relative-magnitude violations up to Mbar = %s before the robust 95%% CI includes zero.\n",
+  ifelse(is.na(breakdown_relmag_avg_exact), "> max Mbar tested", round(breakdown_relmag_avg_exact, 4))
+))
+
+```
+
+```{r}
+#| label: sens-plots
+
+# Sensitivity plots, built with the package's own plotting functions.
+# createSensitivityPlot()/createSensitivityPlot_relativeMagnitudes() return
+# ggplot objects, so cosmetic labs()/theme() layers below are added on top of
+# the package's own geoms -- the underlying CIs are untouched.
+
+hd_smooth_plot <- createSensitivityPlot(
+  hd_smooth$robust_ci,
+  hd_smooth$orig_ci
+) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title    = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption  = element_text(hjust = 0.5, size = 10),
+    legend.title  = element_blank()
+  ) +
+  labs(
+    title    = "Sensitivity Analysis: Smoothness of Violation Path",
+    subtitle = "Callaway & Sant'Anna ATT(0), Never-Treated Comparison Group",
+    caption  = paste0(
+      "Smoothness restriction (Rambachan & Roth, 2023). M = 0: violations lie on a linear trend.\n",
+      "M > 0: second differences of the violation path bounded by M.\n",
+      "Shaded region: robust 95% confidence interval."
+    )
+  )
+
+hd_relmag_plot <- createSensitivityPlot_relativeMagnitudes(
+  hd_relmag$robust_ci,
+  hd_relmag$orig_ci
+) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title    = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption  = element_text(hjust = 0.5, size = 10),
+    legend.title  = element_blank()
+  ) +
+  labs(
+    title    = "Sensitivity Analysis: Parallel Trends Violations",
+    subtitle = "Callaway & Sant'Anna ATT(0), Never-Treated Comparison Group",
+    caption  = paste0(
+      "Relative magnitudes restriction (Rambachan & Roth, 2023). Mbar = 0: exact parallel trends.\n",
+      "Mbar = 1: post-period violations bounded by the largest observed pre-period deviation.\n",
+      "Shaded region: robust 95% confidence interval."
+    )
+  )
+
+hd_relmag_avg_plot <- createSensitivityPlot_relativeMagnitudes(
+  hd_relmag_avg$robust_ci,
+  hd_relmag_avg$orig_ci
+) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title    = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(hjust = 0.5),
+    plot.caption  = element_text(hjust = 0.5, size = 10),
+    legend.title  = element_blank()
+  ) +
+  labs(
+    title    = "Sensitivity Analysis: Parallel Trends Violations",
+    subtitle = "Callaway & Sant'Anna Overall ATT, Never-Treated Comparison Group",
+    caption  = paste0(
+      "Relative magnitudes restriction (Rambachan & Roth, 2023). Mbar = 0: exact parallel trends.\n",
+      "Mbar = 1: post-period violations bounded by the largest observed pre-period deviation.\n",
+      "Target: equally-weighted average of ATT(0) through ATT(6). Shaded region: robust 95% CI."
+    )
+  )
+
+hd_smooth_plot
+hd_relmag_plot
+hd_relmag_avg_plot
+
+ggsave("honest_did_smooth.png", hd_smooth_plot,
+       width = 8, height = 5, dpi = 300, bg = "white")
+ggsave("honest_did_relmag.png", hd_relmag_plot,
+       width = 8, height = 5, dpi = 300, bg = "white")
+ggsave("honest_did_relmag_avg.png", hd_relmag_avg_plot,
+       width = 8, height = 5, dpi = 300, bg = "white")
+
+```
+
+### Callaway and Sant'Anna Pointwise 95% CI
+
+```{r}
+#| label: cs-pointwise-ci
+#| eval: false
+
+# Extract AGGTEobj slots directly and clean the numeric vectors
+cs_es_data <- data.frame(
+  egt      = as.numeric(cs_dynamic$egt),         # event time (relative years)
+  att      = as.numeric(cs_dynamic$att.egt),     # ATT estimate at each event time
+  se       = as.numeric(cs_dynamic$se.egt),      # standard error
+  crit_val = as.numeric(cs_dynamic$crit.val.egt) # simultaneous CI critical value
+) |>
+  mutate(
+    # FIX: If we are at the t = -1 reference period, the SE is exactly 0, not NA
+    se = ifelse(is.na(se) & egt == -1, 0, se),
+    
+    ci_lower = att - 1.96 * se,
+    ci_upper = att + 1.96 * se,
+    # Simultaneous confidence band (more conservative, preferred for event studies)
+    sim_lower = att - crit_val * se,
+    sim_upper = att + crit_val * se,
+    pre_treatment = egt < 0
+  )
+
+# Quick check: row 5 (egt = -1) should now have 0s instead of NAs
+print(head(cs_es_data))
+
+# --- Plot 1: Callaway & Sant'Anna event study ---
+cs_es_plot <- ggplot(
+  cs_es_data,
+  aes(x = egt, y = att, ymin = ci_lower, ymax = ci_upper)
+) +
+  # Shade pre-treatment region
+  annotate(
+    "rect",
+    xmin = min(cs_es_data$egt) - 0.5, xmax = -0.5,
+    ymin = -Inf, ymax = Inf,
+    alpha = 0.06, fill = "steelblue"
+  ) +
+  geom_hline(yintercept = 0, linetype = "dashed",
+             color = "red", linewidth = 0.8) +
+  geom_vline(xintercept = -0.5, linetype = "dotted",
+             color = "grey40", linewidth = 0.6) +
+  geom_ribbon(alpha = 0.15) +
+  geom_line(linewidth = 0.8) +
+  geom_point(size = 2.5,
+             aes(shape = pre_treatment)) +
+  scale_shape_manual(values = c(19, 1), guide = "none") +
+  scale_x_continuous(
+    breaks = seq(min(cs_es_data$egt), max(cs_es_data$egt), by = 1)
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    panel.grid.minor  = element_blank(),
+    plot.title        = element_text(hjust = 0.5, face = "bold"),
+    plot.subtitle     = element_text(hjust = 0.5),
+    plot.caption      = element_text(hjust = 0.5, size = 10)
+  ) +
+  labs(
+    title    = "Event Study: NGFS Membership and GHG Emissions",
+    subtitle = "Callaway & Sant'Anna (2021) Dynamic ATT",
+    x        = "Years Relative to NGFS Membership",
+    y        = "Average Treatment Effect on the Treated (ATT)",
+    caption  = paste0(
+      "Ribbon: pointwise 95% CI. Blue region: pre-treatment periods.\n",
+      "Open circles = pre-treatment periods; filled = post-treatment.\n",
+      "Doubly robust estimator with never-treated controls. SEs clustered by country."
+    )
+  )
+
+cs_es_plot
+
+ggsave("cs_event_study.png", cs_es_plot,
+       width = 10, height = 6, dpi = 300, bg = "white")
+
+```
+
+
+### Aggregation alternatives
+
+```{r}
+#| label: att-setup
+
+gcb_clean_data <- gcb_clean_data |>
+  mutate(first_treat = as.numeric(first_treat))
+
+cs_attgt <- att_gt(
+  yname        = "log_ed_ghg_emissions",
+  tname        = "year",
+  idname       = "country_id",
+  gname        = "first_treat",
+  data         = gcb_clean_data,
+  control_group = "nevertreated",
+  est_method   = "dr",
+  base_period  = "universal",  # Uses a common base period for pre-trends
+  clustervars  = "country_id",
+  print_details = FALSE
+)
+
+cs_att_nyett <- att_gt(
+  yname        = "log_ed_ghg_emissions",
+  tname        = "year",
+  idname       = "country_id",
+  gname        = "first_treat",
+  data         = gcb_clean_data,
+  control_group = "notyettreated",
+  est_method   = "dr",
+  base_period  = "universal",  # Uses a common base period for pre-trends
+  clustervars  = "country_id",
+  print_details = FALSE
+)
+
+
+
+```
+
+```{r}
+#| label: simple-att
+
+# --- Aggregation 1: Simple overall ATT ---
+# A single weighted average of all group-time ATTs.
+# This is your headline number analogous to the TWFE coefficient,
+# but without the forbidden comparisons bias.
+
+cs_simple <- aggte(cs_attgt, type = "simple", na.rm = TRUE)
+
+summary(cs_simple)
+
+# Think of this as the ultimate bottom line of your study. It takes all the complexities—different joining years, different countries, different timelines—and boils them down into one single average.
+
+# The Finding: The overall effect is -0.068.
+
+# What it means: On average, across all countries and all years, joining the NGFS is associated with roughly a 6.8% reduction in greenhouse gas emissions compared to if those countries had never joined.
+
+# The Verdict: The star (*) next to the confidence interval means this result is statistically meaningful. It is not a fluke or random noise; the NGFS has a real, measurable negative impact on emissions.
+
+```
+
+```{r}
+#| label: group-att
+
+# --- Aggregation 4: By group (first treatment cohort) ---
+# Average effect for each treatment cohort.
+# Reveals whether early joiners (2017) differ from later joiners (2020-21).
+# If cohort-specific effects vary widely, that is heterogeneous treatment effects —
+# exactly the problem the TWFE estimator cannot handle.
+
+cs_group <- aggte(cs_attgt, type = "group", na.rm = TRUE)
+
+summary(cs_group)
+
+# This table breaks down your results by the specific "class" of countries—meaning the year they decided to join the NGFS.
+
+# The Early Adopters (2017, 2018, 2019): These are the trailblazers. They all have large negative effects (an 8.6%, 10.7%, and 5.9% drop, respectively) and they all have stars. They are driving the success of your entire study.
+
+# The Late Joiners (2020 to 2023): For countries that joined recently, the estimates shrink, and the stars disappear.
+
+# What this tells us: This perfectly perfectly lines up with your dynamic timeline above! The late joiners simply haven't been in the club long enough to experience that "Year 2 to Year 6" snowball effect. They joined the club, but the policies haven't had enough time to bite yet.
+
+```
+
+```{r}
+#| label: time-att
+
+# --- Aggregation 3: Calendar time aggregation ---
+# Average effect in each calendar year across all treated groups.
+# Useful for assessing whether effects strengthen or weaken over time.
+
+cs_calendar <- aggte(cs_attgt, type = "calendar", na.rm = TRUE)
+
+summary(cs_calendar)
+
+```
+
+### Survival Models
+
+## Replication Notes
+
+The documents and code to replicate the results are available upon request, and they will be published as part of a GitHub public repository.
+
+{{<pagebreak>}}
+
+## References {.unnumbered}
+
+:::{.refs}
+:::

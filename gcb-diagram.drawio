@@ -1,0 +1,120 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="NpGQUQqPmAjm6GGhY_E8">
+    <mxGraphModel grid="1" page="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-4" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-2" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Central Banks" vertex="1">
+          <mxGeometry height="60" width="120" x="135" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-6" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-3" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="State-Owned + Private Banks + Investment Funds" vertex="1">
+          <mxGeometry height="60" width="120" x="135" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-8" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-5" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Capital Allocation" vertex="1">
+          <mxGeometry height="60" width="120" x="135" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-7" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Carbon-Intensive Ventures" vertex="1">
+          <mxGeometry height="60" width="120" x="135" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-23" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-11" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Standard Industrial Policy Pathways" vertex="1">
+          <mxGeometry height="60" width="120" x="135" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-13" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-17" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-14" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-21" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-15" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Central Banks" vertex="1">
+          <mxGeometry height="60" width="120" x="524.9999999999999" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-16" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-19" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-17" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="State-Owned + Private Banks + Investment Funds" vertex="1">
+          <mxGeometry height="60" width="120" x="524.9999999999999" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-18" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-20">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-19" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Capital Allocation" vertex="1">
+          <mxGeometry height="60" width="120" x="524.9999999999999" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-20" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Carbon-Intensive Ventures" vertex="1">
+          <mxGeometry height="60" width="120" x="405" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-21" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Standard and &quot;Green&quot; Industrial Policy Pathways" vertex="1">
+          <mxGeometry height="60" width="120" x="524.9999999999999" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-30" parent="1" style="whiteSpace=wrap;html=1;fillColor=none;fontFamily=Times New Roman;fontSize=14;" value="Low-Cabon Ventures" vertex="1">
+          <mxGeometry height="60" width="120" x="644.9999999999999" y="810" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-31" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-30">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="664.9999999999999" y="760" as="sourcePoint" />
+            <mxPoint x="544.9999999999999" y="840" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-35" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-20" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-17" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="270" y="590" as="sourcePoint" />
+            <mxPoint x="370" y="590" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-36" connectable="0" parent="fi0i8QtQrdH4V_upeGEt-35" style="edgeLabel;resizable=0;html=1;;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=14;" value="Capital Return" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="59" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-37" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-30" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-17" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="390" y="960" as="sourcePoint" />
+            <mxPoint x="509.99999999999994" y="680" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-38" connectable="0" parent="fi0i8QtQrdH4V_upeGEt-37" style="edgeLabel;resizable=0;html=1;;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=14;" value="Capital Return" vertex="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint y="61" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-39" edge="1" parent="1" source="fi0i8QtQrdH4V_upeGEt-7" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;fontFamily=Times New Roman;fontSize=14;" target="fi0i8QtQrdH4V_upeGEt-3" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="75" y="840" />
+              <mxPoint x="75" y="560" />
+            </Array>
+            <mxPoint x="95" y="830" as="sourcePoint" />
+            <mxPoint x="95" y="550" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-40" connectable="0" parent="fi0i8QtQrdH4V_upeGEt-39" style="edgeLabel;resizable=0;html=1;;align=center;verticalAlign=middle;fontFamily=Times New Roman;fontSize=14;" value="Capital Return" vertex="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-41" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontFamily=Times New Roman;fontSize=14;" value="A" vertex="1">
+          <mxGeometry height="30" width="60" x="165" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-42" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;fontFamily=Times New Roman;fontSize=14;" value="B" vertex="1">
+          <mxGeometry height="30" width="60" x="554.9999999999999" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="fi0i8QtQrdH4V_upeGEt-43" edge="1" parent="1" style="endArrow=none;html=1;rounded=0;" value="">
+          <mxGeometry height="50" relative="1" width="50" as="geometry">
+            <mxPoint x="334.94" y="880" as="sourcePoint" />
+            <mxPoint x="334.94" y="200" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
